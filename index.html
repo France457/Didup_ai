@@ -1,0 +1,1074 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f7fb">
+  <meta name="description" content="Diario scolastico per compiti, promemoria e studio.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/app.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/app-180.png">
+  <title>Diario scolastico</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --navy: #244d70;
+      --navy-deep: #203f60;
+      --blue: #3282e8;
+      --blue-pale: #e8f2ff;
+      --red: #f05262;
+      --green: #29bd8e;
+      --yellow: #ffb900;
+      --purple: #8b5ce7;
+      --ink: #172f50;
+      --muted: #70839c;
+      --line: #e8edf4;
+      --canvas: #f4f7fb;
+      --white: #fff;
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    * { box-sizing: border-box; }
+    body { min-width: 320px; min-height: 100vh; margin: 0; background: var(--canvas); color: var(--ink); }
+    button, input { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+    button:focus-visible, input:focus-visible { outline: 3px solid #90c3ff; outline-offset: 2px; }
+    .app { min-height: 100vh; }
+    .sidebar {
+      position: fixed; inset: 0 auto 0 0; z-index: 5; display: flex; width: 114px; flex-direction: column;
+      padding: 15px 7px; background: linear-gradient(180deg, #285578, #244665 65%, #21435f); color: white;
+    }
+    .brand { display: grid; justify-items: center; gap: 1px; margin: 0 0 22px; }
+    .brand-mark { color: #fff; font-size: 12px; font-weight: 800; letter-spacing: -.08em; }
+    .brand-mark span { color: #45c399; }
+    .brand-caption { color: #d2dfec; font-size: 8px; letter-spacing: .08em; }
+    .navigation { display: grid; gap: 4px; overflow-y: auto; scrollbar-width: none; }
+    .navigation::-webkit-scrollbar { display: none; }
+    .nav-button {
+      display: grid; min-height: 48px; justify-items: center; align-content: center; gap: 3px;
+      padding: 4px 2px; border: 0; border-radius: 7px; background: transparent; color: #e6eff8;
+      cursor: pointer; font-size: 9px; transition: background .2s ease, transform .2s ease;
+    }
+    .nav-button:hover { transform: translateX(2px); background: rgb(255 255 255 / 10%); }
+    .nav-button[aria-current="page"] { background: #397ab5; box-shadow: 0 3px 10px rgb(14 37 60 / 15%); color: white; }
+    .nav-icon { font-size: 17px; line-height: 1; }
+    .ai-nav { margin-top: auto; padding: 8px; border-top: 1px solid rgb(255 255 255 / 12%); }
+    .ai-nav[hidden] { display: none; }
+    .exit-ai { min-height: 31px; padding: 0 10px; border: 1px solid #e0e8f3; border-radius: 7px; background: white; color: var(--navy); cursor: pointer; font-size: 10px; font-weight: 700; }
+    .exit-ai[hidden] { display: none; }
+    .main { min-height: 100vh; margin-left: 114px; }
+    .topbar {
+      position: sticky; top: 0; z-index: 4; display: flex; height: 60px; align-items: center; gap: 20px;
+      padding: 0 22px; border-bottom: 1px solid #e9edf3; background: rgb(255 255 255 / 88%); backdrop-filter: blur(16px);
+    }
+    .top-brand { display: none; }
+    .search-wrap { position: relative; width: min(315px, 38vw); }
+    .search-icon { position: absolute; top: 50%; left: 13px; color: #8798ac; font-size: 17px; transform: translateY(-52%); pointer-events: none; }
+    .search { width: 100%; height: 38px; padding: 0 13px 0 39px; border: 1px solid transparent; border-radius: 22px; outline: none; background: #f1f4f8; color: var(--ink); font-size: 12px; transition: border .2s, box-shadow .2s, background .2s; }
+    .search:focus { border-color: #b7d3f3; background: white; box-shadow: 0 0 0 3px rgb(50 130 232 / 8%); }
+    .top-actions { display: flex; align-items: center; gap: 15px; margin-left: auto; }
+    .icon-button { position: relative; display: grid; width: 35px; height: 35px; place-items: center; border: 0; border-radius: 50%; background: transparent; color: #536b86; cursor: pointer; font-size: 18px; transition: background .2s, color .2s; }
+    .icon-button:hover { background: var(--blue-pale); color: var(--blue); }
+    .notification-count { position: absolute; top: 1px; right: 1px; display: grid; min-width: 15px; height: 15px; place-items: center; padding: 0 3px; border: 1px solid white; border-radius: 10px; background: var(--red); color: white; font-size: 9px; font-weight: 800; }
+    .profile { display: flex; align-items: center; gap: 9px; }
+    .profile-button { padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; text-align: left; }
+    .profile-button:hover .avatar { box-shadow: 0 0 0 4px var(--blue-pale); }
+    .avatar { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 50%; background: var(--blue); color: white; font-size: 13px; font-weight: 700; }
+    .profile-name { font-size: 11px; font-weight: 700; }
+    .profile-role { display: block; margin-top: 1px; color: var(--muted); font-size: 10px; font-weight: 400; }
+    .profile-arrow { margin-left: 2px; color: var(--muted); font-size: 12px; }
+    .account-card { max-width: 780px; margin: 0 auto; padding: 25px; }
+    .account-intro { display: flex; align-items: center; gap: 15px; margin-bottom: 22px; padding: 18px; border-radius: 12px; background: linear-gradient(120deg, #edf5ff, #f5f0ff); }
+    .account-avatar { display: grid; width: 58px; height: 58px; flex: 0 0 58px; place-items: center; border-radius: 50%; background: linear-gradient(140deg, #3282e8, #755be8); box-shadow: 0 6px 16px rgb(50 130 232 / 20%); color: white; font-size: 19px; font-weight: 750; }
+    .account-intro h2 { margin: 0; font-size: 16px; }
+    .account-intro p { margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .account-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .field { display: grid; gap: 7px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { font-size: 11px; font-weight: 700; }
+    .field-label { font-size: 11px; font-weight: 700; }
+    .field input { width: 100%; min-height: 43px; padding: 0 12px; border: 1px solid #dfe6ef; border-radius: 8px; outline: 0; background: #fbfcfe; color: var(--ink); font-size: 12px; transition: border .18s, box-shadow .18s, background .18s; }
+    .field input:focus { border-color: #80b5f0; background: white; box-shadow: 0 0 0 3px rgb(50 130 232 / 10%); }
+    .account-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 21px; }
+    .save-status { min-height: 18px; margin: 0; color: var(--green); font-size: 11px; }
+    .save-status.error { color: var(--red); }
+    .save-button { min-height: 41px; padding: 0 19px; border: 0; border-radius: 8px; background: linear-gradient(110deg, #3282e8, #426fe1); box-shadow: 0 5px 12px rgb(50 130 232 / 18%); color: white; cursor: pointer; font-size: 12px; font-weight: 700; transition: transform .18s, box-shadow .18s; }
+    .save-button:hover { transform: translateY(-2px); box-shadow: 0 8px 17px rgb(50 130 232 / 25%); }
+    .account-note { margin: 17px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .auth-gate { display: grid; min-height: 100vh; place-items: center; padding: 24px; background: radial-gradient(ellipse at top, #e8f2ff, transparent 55%), var(--canvas); }
+    .auth-card { width: min(100%, 390px); padding: 28px; border: 1px solid var(--line); border-radius: 16px; background: white; box-shadow: 0 16px 45px rgb(34 65 97 / 10%); }
+    .auth-mark { display: grid; width: 52px; height: 52px; place-items: center; margin-bottom: 18px; border-radius: 15px; background: linear-gradient(140deg, #3282e8, #755be8); color: white; font-size: 24px; font-weight: 800; }
+    .auth-card h1 { margin: 0; color: var(--ink); font-size: 21px; }
+    .auth-copy { margin: 8px 0 20px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .auth-form { display: grid; gap: 12px; }
+    .auth-form[hidden] { display: none; }
+    .auth-form label { display: grid; gap: 7px; font-size: 12px; font-weight: 700; }
+    .auth-form input { width: 100%; min-height: 46px; padding: 0 12px; border: 1px solid #dfe6ef; border-radius: 8px; background: #fbfcfe; color: var(--ink); font-size: 16px; }
+    .auth-submit { min-height: 44px; border: 0; border-radius: 8px; background: linear-gradient(110deg, #3282e8, #426fe1); color: white; cursor: pointer; font-size: 13px; font-weight: 700; }
+    .auth-submit:disabled { cursor: wait; opacity: .65; }
+    .auth-status { min-height: 18px; margin: 0; color: var(--red); font-size: 12px; line-height: 1.45; }
+    .app[hidden], .auth-gate[hidden] { display: none; }
+    [data-logout] { padding: 7px 9px; border: 1px solid #e2e8f0; border-radius: 7px; background: white; color: var(--navy); cursor: pointer; font-size: 10px; font-weight: 700; }
+    .ai-planner { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .78fr); gap: 18px; align-items: center; overflow: hidden; margin-bottom: 15px; padding: 18px 20px; border-color: #dfe8fa; background: linear-gradient(115deg, #f0f6ff, #f7f2ff 68%, #fff); }
+    .ai-planner::after { position: absolute; top: -65px; right: 30%; width: 190px; height: 190px; border-radius: 50%; background: radial-gradient(circle, rgb(126 114 238 / 12%), transparent 70%); content: ""; pointer-events: none; }
+    .ai-planner-copy, .ai-planner-action { position: relative; z-index: 1; }
+    .ai-eyebrow { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 7px; color: #7057cc; font-size: 9px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+    .ai-planner h2 { margin: 0; font-size: 15px; }
+    .ai-planner-copy p { max-width: 430px; margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .ai-planner-action { display: grid; gap: 8px; }
+    .api-key-row { display: flex; gap: 7px; }
+    .api-key-input { width: 100%; min-width: 0; height: 37px; padding: 0 11px; border: 1px solid #dfe4f0; border-radius: 8px; outline: 0; background: rgb(255 255 255 / 85%); color: var(--ink); font-size: 11px; transition: border .18s, box-shadow .18s; }
+    .api-key-input:focus { border-color: #9580e9; box-shadow: 0 0 0 3px rgb(139 92 231 / 11%); }
+    .ai-button { min-height: 37px; padding: 0 12px; border: 0; border-radius: 8px; background: linear-gradient(110deg, #7659df, #4984e4); box-shadow: 0 4px 11px rgb(97 94 218 / 20%); color: white; cursor: pointer; font-size: 10px; font-weight: 750; white-space: nowrap; transition: transform .18s, box-shadow .18s, opacity .18s; }
+    .ai-button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 7px 15px rgb(97 94 218 / 25%); }
+    .ai-button:disabled { cursor: wait; opacity: .65; }
+    .ai-key-note, .ai-status { min-height: 14px; margin: 0; color: var(--muted); font-size: 9px; line-height: 1.4; }
+    .ai-status.error { color: var(--red); }
+    .ai-status.success { color: var(--green); }
+    .ai-plan-result { margin-top: 11px; padding: 13px 15px; border: 1px solid #e7e1fc; border-radius: 9px; background: rgb(255 255 255 / 86%); font-size: 11px; line-height: 1.65; white-space: pre-wrap; }
+    .ai-plan-result[hidden] { display: none; }
+    .planning-promo { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 14px; overflow: hidden; margin: 0 0 15px; padding: 12px 15px; border: 1px solid #e2e6fb; border-radius: 11px; background: linear-gradient(105deg, #f0f5ff, #f8f1ff 64%, #fff7f0); box-shadow: 0 3px 11px rgb(64 75 132 / 4%); cursor: pointer; text-align: left; transition: transform .2s, box-shadow .2s, border-color .2s; animation: rise-in .45s .04s both; }
+    .planning-promo:hover { transform: translateY(-2px); border-color: #cbd1f4; box-shadow: 0 9px 20px rgb(64 75 132 / 10%); }
+    .planning-promo-copy { display: flex; min-width: 0; align-items: center; gap: 12px; }
+    .planning-promo-icon { display: grid; width: 38px; height: 38px; flex: 0 0 38px; place-items: center; border-radius: 11px; background: linear-gradient(145deg, #e9e5ff, #e7f1ff); color: #7559dd; font-size: 19px; }
+    .planning-promo-title { display: block; color: #263967; font-size: 12px; font-weight: 750; }
+    .planning-promo-text { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+    .planning-promo-action { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; color: #7159d1; font-size: 10px; font-weight: 750; }
+    .planning-promo-arrow { font-size: 17px; transition: transform .2s; }
+    .planning-promo:hover .planning-promo-arrow { transform: translateX(3px); }
+    .planning-page { display: grid; width: min(100%, 920px); gap: 14px; margin: 0 auto; }
+    .planning-hero { position: relative; overflow: hidden; padding: 22px; border: 1px solid #e5e4fb; border-radius: 14px; background: linear-gradient(115deg, #f0f5ff, #f5f0ff 58%, #fff6f2); }
+    .planning-hero::after { position: absolute; top: -75px; right: 8%; width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, rgb(117 89 221 / 13%), transparent 70%); content: ""; pointer-events: none; }
+    .planning-hero > * { position: relative; z-index: 1; }
+    .planning-hero h2 { margin: 3px 0 6px; font-size: 18px; }
+    .planning-hero p { max-width: 580px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .planning-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, .72fr); gap: 14px; align-items: start; }
+    .planning-card { padding: 17px; }
+    .planning-card h2 { margin: 0; font-size: 13px; }
+    .planning-card > p { margin: 6px 0 13px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .planning-key-row { display: grid; gap: 8px; }
+    .planning-key-status { display: flex; align-items: center; gap: 7px; min-height: 17px; margin: 0; color: var(--muted); font-size: 9px; }
+    .planning-key-status.connected { color: var(--green); }
+    .planning-key-status.error { color: var(--red); }
+    .planning-key-status::before { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: currentColor; content: ""; }
+    .planning-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .ai-secondary-button { min-height: 34px; padding: 0 11px; border: 1px solid #e2e5f0; border-radius: 7px; background: white; color: #6355b6; cursor: pointer; font-size: 10px; font-weight: 700; transition: background .18s, transform .18s; }
+    .ai-secondary-button:hover:not(:disabled) { transform: translateY(-1px); background: #f6f3ff; }
+    .ai-secondary-button:disabled { cursor: not-allowed; opacity: .5; }
+    .planning-result { min-height: 74px; margin-top: 12px; padding: 12px; border: 1px dashed #dcd9f4; border-radius: 8px; background: #fcfbff; color: #394967; font-size: 10px; line-height: 1.65; white-space: pre-wrap; }
+    .planning-result:empty::before { color: #99a6b9; content: "Il tuo piano di studio apparirà qui."; }
+    .planning-task-list { display: grid; gap: 8px; }
+    .planning-task { display: flex; align-items: flex-start; gap: 8px; color: #42536b; font-size: 10px; line-height: 1.45; }
+    .planning-task::before { width: 7px; height: 7px; flex: 0 0 7px; margin-top: 4px; border-radius: 50%; background: #8067df; content: ""; }
+    .planning-list-heading { margin: 15px 0 8px; color: var(--ink); font-size: 11px; }
+    .planning-list-heading { margin: 15px 0 8px; color: var(--ink); font-size: 11px; }
+    .chat-shell { display: grid; width: min(100%, 900px); min-height: min(660px, calc(100vh - 190px)); grid-template-rows: auto minmax(180px, 1fr) auto; overflow: hidden; margin: 0 auto; }
+    .chat-shell[hidden] { display: none; }
+    .chat-shell { display: grid; width: min(100%, 900px); min-height: min(660px, calc(100vh - 190px)); grid-template-rows: auto minmax(180px, 1fr) auto; overflow: hidden; margin: 0 auto; }
+    .chat-heading { display: flex; align-items: center; gap: 12px; padding: 17px 20px; border-bottom: 1px solid var(--line); }
+    .chat-heading-icon { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 12px; background: linear-gradient(140deg, #eee9ff, #e8f2ff); color: #7659df; font-size: 20px; }
+    .chat-heading h2 { margin: 0; font-size: 14px; }
+    .chat-heading p { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
+    .chat-heading .text-button { margin-left: auto; }
+    .chat-messages { display: flex; flex-direction: column; gap: 13px; overflow: auto; padding: 19px 20px; }
+    .chat-message { display: flex; max-width: min(82%, 610px); align-items: flex-start; gap: 9px; animation: rise-in .24s both; }
+    .chat-message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .message-avatar { display: grid; width: 28px; height: 28px; flex: 0 0 28px; place-items: center; border-radius: 50%; background: #eee9ff; color: #7659df; font-size: 12px; font-weight: 750; }
+    .chat-message.user .message-avatar { background: var(--blue-pale); color: var(--blue); }
+    .message-bubble { padding: 10px 12px; border: 1px solid var(--line); border-radius: 4px 12px 12px; background: #f8faff; color: var(--ink); font-size: 11px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .chat-message.user .message-bubble { border-color: #d7e8ff; border-radius: 12px 4px 12px 12px; background: #edf5ff; }
+    .chat-message.loading .message-bubble { color: var(--muted); }
+    .chat-composer { padding: 14px 18px 16px; border-top: 1px solid var(--line); background: #fcfdff; }
+    .chat-form { display: flex; align-items: flex-end; gap: 9px; }
+    .chat-input { width: 100%; min-height: 43px; max-height: 130px; resize: vertical; padding: 11px 12px; border: 1px solid #dfe6ef; border-radius: 9px; outline: 0; background: white; color: var(--ink); font-size: 11px; line-height: 1.5; }
+    .chat-input:focus { border-color: #9580e9; box-shadow: 0 0 0 3px rgb(139 92 231 / 10%); }
+    .chat-footnote { margin: 8px 2px 0; color: var(--muted); font-size: 9px; }
+    .chat-setup { width: min(100%, 560px); margin: 30px auto; padding: 23px; }
+    .chat-setup .ai-planner-action { margin-top: 17px; }
+    .chat-empty-state { max-width: 360px; margin: auto; padding: 24px 16px; color: var(--muted); font-size: 11px; line-height: 1.6; text-align: center; }
+    .chat-empty-state .message-avatar { width: 39px; height: 39px; margin: 0 auto 10px; font-size: 17px; }
+    .content { width: min(100%, 1440px); margin: 0 auto; padding: 27px 16px 38px; }
+    .welcome { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 19px; animation: rise-in .45s both; }
+    .page-heading { margin: 0; font-size: clamp(22px, 2.4vw, 27px); letter-spacing: -.035em; }
+    .page-subtitle { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+    .date-chip { flex: 0 0 auto; padding: 12px 15px; border: 1px solid #e7edf4; border-radius: 12px; background: white; box-shadow: 0 3px 14px rgb(35 64 92 / 3%); font-size: 12px; font-weight: 700; }
+    .date-chip span { margin-left: 6px; color: var(--blue); }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; margin-bottom: 17px; }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .card { min-width: 0; border: 1px solid #e9eef4; border-radius: 12px; background: var(--white); box-shadow: 0 3px 12px rgb(31 58 86 / 3%); }
+    .stat { position: relative; min-height: 126px; overflow: hidden; padding: 14px; transition: transform .22s ease, box-shadow .22s ease; }
+    .stat:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgb(31 58 86 / 10%); }
+    .stat::after { position: absolute; right: -19px; bottom: -28px; width: 92px; height: 92px; border-radius: 50%; background: var(--tint); content: ""; opacity: .55; transition: transform .35s ease; }
+    .stat:hover::after { transform: scale(1.25); }
+    .stat.blue-card { --accent: #3282e8; --tint: #e8f2ff; background: linear-gradient(135deg, #fff, #f4f9ff); }
+    .stat.red-card { --accent: #f05262; --tint: #ffedf0; background: linear-gradient(135deg, #fff, #fff4f5); }
+    .stat.green-card { --accent: #22b888; --tint: #e9faf3; background: linear-gradient(135deg, #fff, #f1fbf7); }
+    .stat.gold-card { --accent: #e7a400; --tint: #fff4d8; background: linear-gradient(135deg, #fff, #fffaf0); }
+    .stat-top { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; }
+    .stat-icon { display: grid; width: 43px; height: 43px; place-items: center; border-radius: 13px; background: var(--tint); color: var(--accent); font-size: 22px; }
+    .stat-arrow { color: var(--accent); font-size: 17px; transition: transform .2s ease; }
+    .stat:hover .stat-arrow { transform: translateX(4px); }
+    .stat-value { position: relative; z-index: 1; display: block; margin-top: 9px; font-size: 21px; font-weight: 750; }
+    .stat-label { position: relative; z-index: 1; margin: 4px 0 0; font-size: 11px; }
+    .stat-word { font-size: 17px; }
+    .dashboard-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
+    .dashboard-grid > .panel:not(.calendar-panel) { display: flex; flex-direction: column; }
+    .reminder-list { display: flex; flex: 1; flex-direction: column; }
+    .reminder-list > .reminder { flex: 1; align-items: center; }
+    .calendar-panel { grid-column: 1 / -1; }
+    .panel { padding: 16px 18px; }
+    .panel-heading { display: flex; min-height: 28px; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .panel-title { display: flex; align-items: center; gap: 9px; margin: 0; font-size: 14px; }
+    .panel-icon { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 7px; background: var(--blue-pale); color: var(--blue); font-size: 14px; }
+    .panel-icon.red-icon { background: #ffedf0; color: var(--red); }
+    .text-button { padding: 6px 0 6px 8px; border: 0; background: transparent; color: var(--blue); cursor: pointer; font-size: 11px; font-weight: 650; white-space: nowrap; }
+    .text-button:hover { text-decoration: underline; }
+    .assignment, .reminder, .communication { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .assignment:last-child, .reminder:last-child, .communication:last-child { border-bottom: 0; }
+    .assignment-body, .reminder-body, .communication-body { min-width: 0; flex: 1; }
+    .assignment-meta, .reminder-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .subject { font-size: 11px; font-weight: 750; }
+    .due { color: var(--muted); font-size: 10px; white-space: nowrap; }
+    .due.urgent { color: var(--red); }
+    .assignment-title, .reminder-title, .communication-title { margin: 4px 0 2px; font-size: 11px; font-weight: 700; line-height: 1.4; }
+    .assignment-detail, .reminder-detail, .communication-detail { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .subject-dot { width: 12px; height: 12px; flex: 0 0 12px; margin-top: 3px; border-radius: 50%; }
+    .reminder-time { display: grid; justify-items: end; gap: 3px; flex: 0 0 auto; color: var(--muted); font-size: 10px; }
+    .reminder-time strong { color: var(--red); font-weight: 650; }
+    .calendar-panel { min-height: 293px; }
+    .calendar-controls { display: flex; align-items: center; gap: 2px; }
+    .calendar-controls strong { margin-right: 6px; font-size: 11px; }
+    .calendar-controls button { width: 26px; height: 26px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; transition: background .2s; }
+    .calendar-controls button:hover { background: var(--blue-pale); color: var(--blue); }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; margin-top: 10px; text-align: center; }
+    .weekday { padding: 6px 0; color: var(--muted); font-size: 10px; }
+    .calendar-day { position: relative; display: grid; min-width: 0; min-height: 38px; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--ink); cursor: pointer; font-size: 11px; transition: background .18s, color .18s, transform .18s; }
+    .calendar-day:hover { transform: scale(1.08); background: var(--blue-pale); }
+    .calendar-day.outside { color: #aab8c8; }
+    .calendar-day.today { background: var(--blue); color: white; }
+    .calendar-day.selected:not(.today) { box-shadow: inset 0 0 0 1px var(--blue); }
+    .communication-list { padding-top: 1px; }
+    .communication-icon { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border-radius: 50%; background: var(--blue-pale); color: var(--blue); font-size: 16px; }
+    .communication-icon.green-tint { background: #e9faf3; color: var(--green); }
+    .communication-icon.purple-tint { background: #f1eaff; color: var(--purple); }
+    .communication-date { flex: 0 0 auto; padding-top: 4px; color: var(--muted); font-size: 10px; }
+    .disclaimer, .empty { color: var(--muted); font-size: 11px; }
+    .disclaimer { margin: 13px 2px 0; }
+    .empty { padding: 16px 0; }
+    .task-row { display: flex; align-items: center; gap: 11px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .task-row:last-child { border-bottom: 0; }
+    .day-group + .day-group { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .day-group-title { display: flex; align-items: baseline; gap: 8px; margin: 0; color: var(--navy); font-size: 12px; font-weight: 750; text-transform: capitalize; }
+    .day-group-date, .day-group-progress { color: var(--muted); font-size: 10px; font-weight: 500; }
+    .day-group-progress { margin-left: auto; text-align: right; }
+    .day-group-progress.is-complete { color: var(--green); font-weight: 700; }
+    .day-group-items { margin-top: 5px; }
+    .check-button { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; border: 1px solid #d7dee7; border-radius: 50%; background: white; color: var(--muted); cursor: pointer; font-size: 16px; transition: all .2s; }
+    .check-button:hover, .check-button[aria-pressed="true"] { border-color: var(--green); background: var(--green); color: white; }
+    .task-row.is-done .assignment-title { color: var(--muted); text-decoration: line-through; }
+    .page-enter { animation: rise-in .36s both; }
+    .page-enter .card { animation: rise-in .42s both; }
+    .page-enter .card:nth-child(2) { animation-delay: .04s; }
+    .page-enter .card:nth-child(3) { animation-delay: .08s; }
+    .page-enter .card:nth-child(4) { animation-delay: .12s; }
+    @keyframes rise-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @media (min-width: 1400px) { .content { padding: 34px 26px 44px; } .sidebar { width: 130px; } .main { margin-left: 130px; } }
+    @media (max-width: 900px) {
+      .sidebar { width: 96px; }
+      .main { margin-left: 96px; }
+      .content { padding: 22px 13px 30px; }
+      .topbar { padding: 0 16px; }
+      .stats { gap: 9px; }
+      .stat { min-height: 117px; padding: 12px; }
+      .dashboard-grid { gap: 12px; }
+    }
+    @media (max-width: 620px) {
+      .sidebar { inset: auto 0 0; width: auto; height: calc(64px + env(safe-area-inset-bottom)); padding: 4px 5px env(safe-area-inset-bottom); border-top: 1px solid rgb(255 255 255 / 12%); }
+      .brand { display: none; }
+      .navigation { width: 100%; height: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; overflow: visible; }
+      .app.ai-mode .navigation { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .nav-button { display: grid; width: 100%; min-width: 0; min-height: 49px; font-size: 10px; }
+      .nav-icon { font-size: 16px; }
+      .main { margin-left: 0; padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
+      .topbar { height: 58px; gap: 9px; padding: 0 12px; }
+      .top-brand { display: block; color: var(--blue); font-size: 13px; font-weight: 800; letter-spacing: -.04em; white-space: nowrap; }
+      .search-wrap { width: auto; min-width: 0; flex: 1; }
+      .search { height: 35px; padding-left: 33px; font-size: 11px; }
+      .search-icon { left: 10px; font-size: 15px; }
+      .top-actions { gap: 6px; }
+      .icon-button { width: 30px; height: 30px; font-size: 16px; }
+      .profile { gap: 0; }
+      .avatar { width: 31px; height: 31px; font-size: 11px; }
+      .profile-copy, .profile-arrow { display: none; }
+      .content { padding: 20px 13px 23px; }
+      .welcome { align-items: flex-start; margin-bottom: 15px; }
+      .page-heading { font-size: 21px; }
+      .page-subtitle { max-width: 270px; font-size: 11px; line-height: 1.45; }
+      .date-chip { padding: 9px 8px; font-size: 9px; }
+      .date-chip span { margin-left: 2px; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-bottom: 12px; }
+      .stat { min-height: 110px; padding: 11px; }
+      .stat-icon { width: 37px; height: 37px; border-radius: 11px; font-size: 19px; }
+      .stat-value { margin-top: 7px; font-size: 19px; }
+      .stat-word { font-size: 15px; }
+      .stat-label { font-size: 10px; }
+      .dashboard-grid { grid-template-columns: minmax(0, 1fr); gap: 11px; }
+      .calendar-panel { grid-column: auto; }
+      .panel { padding: 14px; }
+      .calendar-day { min-height: 35px; }
+      .communication-date { font-size: 9px; }
+      .account-card { padding: 17px 14px; }
+      .account-intro { gap: 11px; padding: 13px; }
+      .account-avatar { width: 48px; height: 48px; flex-basis: 48px; font-size: 16px; }
+      .account-intro h2 { font-size: 14px; }
+      .account-form { gap: 13px 10px; }
+      .field input { min-height: 41px; padding: 0 9px; font-size: 11px; }
+      .account-footer { align-items: flex-start; flex-direction: column; }
+      .save-button { width: 100%; }
+      .ai-planner { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 15px; }
+      .ai-planner h2 { font-size: 14px; }
+      .api-key-row { flex-wrap: wrap; }
+      .api-key-row .ai-button { flex: 0 0 auto; }
+      .chat-shell { min-height: calc(100svh - 165px); grid-template-rows: auto minmax(180px, 1fr) auto; }
+      .chat-heading { padding: 13px; }
+      .chat-messages { padding: 14px 12px; }
+      .chat-message { max-width: 92%; }
+      .chat-composer { padding: 11px 12px 13px; }
+      .chat-setup { margin: 8px auto; padding: 17px 14px; }
+      .ai-mode .top-brand { display: none; }
+      .ai-mode .topbar { gap: 7px; }
+      .ai-nav { display: none; }
+      .planning-promo { gap: 8px; padding: 11px; }
+      .planning-promo-copy { gap: 9px; }
+      .planning-promo-icon { width: 34px; height: 34px; flex-basis: 34px; font-size: 17px; }
+      .planning-promo-title { font-size: 11px; }
+      .planning-promo-text { font-size: 9px; }
+      .planning-promo-action { gap: 4px; font-size: 9px; }
+      .planning-layout { grid-template-columns: minmax(0, 1fr); }
+      .planning-hero { padding: 17px 15px; }
+      .planning-hero h2 { font-size: 16px; }
+      .planning-card { padding: 14px; }
+      html { scrollbar-width: none; -ms-overflow-style: none; }
+      html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; width: 0; height: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <section class="auth-gate" id="auth-gate" aria-labelledby="auth-title" hidden>
+    <div class="auth-card">
+      <div class="auth-mark" aria-hidden="true">◠</div>
+      <h1 id="auth-title">Diario scolastico</h1>
+      <p class="auth-copy" id="auth-copy">Accedi per aprire il diario e usare l'assistente AI.</p>
+      <form class="auth-form" id="auth-form">
+        <label for="app-password">Password di accesso</label>
+        <input id="app-password" name="password" type="password" autocomplete="current-password" required>
+        <button class="auth-submit" type="submit">Accedi</button>
+        <p class="auth-status" id="auth-status" role="status"></p>
+      </form>
+    </div>
+  </section>
+  <div class="app" hidden>
+    <aside class="sidebar" aria-label="Navigazione principale">
+      <div class="brand">
+        <div class="brand-mark">◠ <span>didUP</span></div>
+        <div class="brand-caption">ARGO</div>
+      </div>
+      <nav class="navigation" aria-label="Menu">
+        <button class="nav-button" data-page="Home" aria-current="page"><span class="nav-icon">⌂</span>Home</button>
+        <button class="nav-button" data-page="Compiti"><span class="nav-icon">▣</span>Compiti</button>
+        <button class="nav-button" data-page="Promemoria"><span class="nav-icon">♟</span>Promemoria</button>
+        <button class="nav-button" data-page="Account"><span class="nav-icon">♙</span>Account</button>
+      </nav>
+      <div class="ai-nav" id="ai-nav" hidden><button class="exit-ai" type="button" data-exit-planning>Torna al diario</button></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="top-brand">didUP</div>
+        <button class="exit-ai" id="exit-ai-top" type="button" data-exit-planning hidden>← Diario</button>
+        <label class="search-wrap">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input class="search" id="search" type="search" placeholder="Cerca..." aria-label="Cerca compiti e promemoria">
+        </label>
+        <div class="top-actions">
+          <button class="icon-button" type="button" aria-label="Notifiche" title="Notifiche">♟<span class="notification-count">3</span></button>
+          <button type="button" data-logout>Esci</button>
+          <button class="profile profile-button" type="button" data-page="Account" aria-label="Apri il tuo account">
+            <span class="avatar" id="profile-avatar" aria-hidden="true">S</span>
+            <span class="profile-copy"><span class="profile-name" id="profile-name">Studente</span><span class="profile-role" id="profile-role">Studente</span></span>
+            <span class="profile-arrow" aria-hidden="true">⌄</span>
+          </button>
+        </div>
+      </header>
+      <section class="content" id="content" aria-live="polite"></section>
+    </main>
+  </div>
+
+  <script>
+    const API_CONFIG = {
+      google: {
+        models: { "gemini-2.5": "gemini-2.5", "gemini-2.5-chat": "gemini-2.5-chat" }
+      }
+    };
+    const assignments = [
+      { subject: "Matematica", title: "Esercizi pag. 210 n. 1, 2, 3", detail: "Equazioni e problemi", due: "Domani", dayOffset: 1, color: "#3282e8" },
+      { subject: "Italiano", title: "Analisi del testo “Il Gabbiano”", detail: "Completare sul quaderno", due: "Tra 2 giorni", dayOffset: 2, color: "#f05262" },
+      { subject: "Inglese", title: "Vocabulary: unit 5", detail: "Ripassare le parole nuove", due: "Tra 3 giorni", dayOffset: 3, color: "#29bd8e" },
+      { subject: "Storia", title: "Riassunto capitolo 8", detail: "Dal paragrafo 2 al paragrafo 5", due: "Tra 6 giorni", dayOffset: 6, color: "#ffb900" }
+    ];
+    const reminders = [
+      { time: "08:00", title: "Verifica di Matematica", detail: "Porta la calcolatrice", dateOffset: 1, color: "#f05262" },
+      { time: "23:59", title: "Consegna progetto di Scienze", detail: "Carica il file su Classroom", dateOffset: 4, color: "#8b5ce7" }
+    ];
+    const content = document.querySelector("#content");
+    const search = document.querySelector("#search");
+    const navigation = document.querySelector(".navigation");
+    const normalNavigation = [
+      ["Home", "⌂"],
+      ["Compiti", "▣"],
+      ["Promemoria", "♟"],
+      ["Account", "♙"]
+    ];
+    const aiNavigation = [
+      ["Planning", "✦"],
+      ["Chat", "☷"]
+    ];
+    const today = new Date();
+    let currentPage = "Home";
+    let aiMode = false;
+    let geminiApiConfigured = false;
+    let geminiConfigLoaded = false;
+    let geminiConfigError = "";
+    let csrfToken = "";
+    let chatHistory = [];
+    let chatBusy = false;
+    let planningBusy = false;
+    let chatStatus = "";
+    let planningStatus = "";
+    let planningResult = "";
+    let calendarMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    let selectedDay = today.getDate();
+    let completed = new Set();
+    let account = { firstName: "", lastName: "", school: "", schoolYear: "" };
+    try {
+      const savedAccount = JSON.parse(localStorage.getItem("diario-account") || "null");
+      if (savedAccount && typeof savedAccount === "object") {
+        account = {
+          firstName: typeof savedAccount.firstName === "string" ? savedAccount.firstName : "",
+          lastName: typeof savedAccount.lastName === "string" ? savedAccount.lastName : "",
+          school: typeof savedAccount.school === "string" ? savedAccount.school : "",
+          schoolYear: typeof savedAccount.schoolYear === "string" ? savedAccount.schoolYear : ""
+        };
+      }
+    } catch (error) {
+      console.warn("Non è stato possibile leggere l'account salvato nel browser.", error);
+    }
+    try {
+      const saved = JSON.parse(localStorage.getItem("diario-completed") || "[]");
+      if (Array.isArray(saved) && saved.every(item => typeof item === "string")) completed = new Set(saved);
+    } catch (error) {
+      console.warn("Non è stato possibile leggere i compiti salvati nel browser.", error);
+    }
+
+    function filtered(items) {
+      const query = search.value.trim().toLocaleLowerCase("it");
+      if (!query) return items;
+      return items.filter(item => Object.values(item).some(value => String(value).toLocaleLowerCase("it").includes(query)));
+    }
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, character => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[character]);
+    }
+
+    function accountInitials() {
+      const firstInitial = account.firstName.trim().charAt(0);
+      const lastInitial = account.lastName.trim().charAt(0);
+      return (firstInitial + lastInitial || "S").toLocaleUpperCase("it");
+    }
+
+    function updateProfile() {
+      const displayName = [account.firstName, account.lastName].filter(Boolean).join(" ").trim() || "Studente";
+      document.querySelector("#profile-avatar").textContent = accountInitials();
+      document.querySelector("#profile-name").textContent = displayName;
+      document.querySelector("#profile-role").textContent = account.schoolYear || "Studente";
+    }
+
+    function renderNavigation() {
+      const links = aiMode ? aiNavigation : normalNavigation;
+      navigation.innerHTML = links.map(([page, icon]) =>
+        `<button class="nav-button" data-page="${page}" ${currentPage === page ? 'aria-current="page"' : ""}><span class="nav-icon" aria-hidden="true">${icon}</span>${page}</button>`
+      ).join("");
+      document.querySelector("#ai-nav").hidden = !aiMode;
+      document.querySelector("#exit-ai-top").hidden = !aiMode;
+    }
+
+    function header(title, subtitle, date = false) {
+      const dateText = new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(today);
+      return `<div class="welcome page-enter"><div><h1 class="page-heading">${title}</h1><p class="page-subtitle">${subtitle}</p></div>${date ? `<div class="date-chip">${dateText}<span>▦</span></div>` : ""}</div>`;
+    }
+
+    function sectionHeading(title, icon, target, action = "Vedi tutti") {
+      return `<div class="panel-heading"><h2 class="panel-title"><span class="panel-icon ${icon === "♟" ? "red-icon" : ""}">${icon}</span>${title}</h2><button class="text-button" data-go="${target}">${action}</button></div>`;
+    }
+
+    function empty(message) {
+      return `<p class="empty">${message}</p>`;
+    }
+
+    function dateGroupLabel(dayOffset) {
+      const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + dayOffset);
+      const dateText = new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "numeric", month: "long" }).format(date);
+      const relativeDay = dayOffset === 0 ? "Oggi" : dayOffset === 1 ? "Domani" : "";
+      return { relativeDay, dateText };
+    }
+
+    function groupedByDay(items, offsetKey, renderItem, summarizeGroup = null) {
+      const groups = new Map();
+      items.forEach(item => {
+        if (!groups.has(item[offsetKey])) groups.set(item[offsetKey], []);
+        groups.get(item[offsetKey]).push(item);
+      });
+      return [...groups.entries()]
+        .sort(([firstDay], [secondDay]) => firstDay - secondDay)
+        .map(([dayOffset, groupItems]) => {
+          const { relativeDay, dateText } = dateGroupLabel(dayOffset);
+          const summary = summarizeGroup ? summarizeGroup(groupItems) : "";
+          return `<section class="day-group"><h3 class="day-group-title">${relativeDay ? `${relativeDay} · ` : ""}<span class="day-group-date">${escapeHTML(dateText)}</span>${summary}</h3><div class="day-group-items">${groupItems.map(renderItem).join("")}</div></section>`;
+        }).join("");
+    }
+
+    function taskProgress(items) {
+      const remaining = items.filter(item => !completed.has(item.title)).length;
+      const message = remaining === 0
+        ? "Tutti i compiti sono stati completati"
+        : remaining === 1 ? "Ti manca 1 compito" : `Ti mancano ${remaining} compiti`;
+      return `<span class="day-group-progress ${remaining === 0 ? "is-complete" : ""}">${message}</span>`;
+    }
+
+    function assignmentCard(item) {
+      return `<article class="assignment">
+        <span class="subject-dot" style="background:${item.color}"></span>
+        <div class="assignment-body"><div class="assignment-meta"><span class="subject">${item.subject}</span><span class="due ${item.dayOffset <= 1 ? "urgent" : ""}">${item.due}</span></div>
+        <h3 class="assignment-title">${item.title}</h3><p class="assignment-detail">${item.detail}</p></div>
+      </article>`;
+    }
+
+    function reminderCard(item) {
+      const dueDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + item.dateOffset);
+      const dateText = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "long" }).format(dueDate);
+      return `<article class="reminder">
+        <span class="subject-dot" style="background:${item.color}"></span>
+        <div class="reminder-body"><h3 class="reminder-title">${item.title}</h3><p class="reminder-detail">${item.detail}</p></div>
+        <span class="reminder-time"><strong>${dateText}</strong>${item.time}</span>
+      </article>`;
+    }
+
+    function lessonRows() {
+      return lessons.map(item => `<div class="timetable-row"><span class="timetable-time">${item.time}</span><span class="timetable-marker" style="background:${item.color}"></span><span class="timetable-subject">${item.subject}</span><span class="classroom">${item.room}</span></div>`).join("");
+    }
+
+    function calendarControls() {
+      const monthName = new Intl.DateTimeFormat("it-IT", { month: "long", year: "numeric" }).format(calendarMonth);
+      return `<div class="calendar-controls"><strong>${monthName}</strong><button type="button" data-month-shift="-1" aria-label="Mese precedente">‹</button><button type="button" data-month-shift="1" aria-label="Mese successivo">›</button></div>`;
+    }
+
+    function calendarMarkup() {
+      const year = calendarMonth.getFullYear();
+      const month = calendarMonth.getMonth();
+      const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const previousDays = new Date(year, month, 0).getDate();
+      let days = "";
+      for (let index = 0; index < 42; index += 1) {
+        let day;
+        let outside = false;
+        let cellMonth = month;
+        let cellYear = year;
+        if (index < firstWeekday) {
+          day = previousDays - firstWeekday + index + 1;
+          outside = true;
+          if (month === 0) { cellMonth = 11; cellYear -= 1; } else cellMonth -= 1;
+        } else if (index >= firstWeekday + daysInMonth) {
+          day = index - firstWeekday - daysInMonth + 1;
+          outside = true;
+          if (month === 11) { cellMonth = 0; cellYear += 1; } else cellMonth += 1;
+        } else {
+          day = index - firstWeekday + 1;
+        }
+        const isToday = !outside && year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
+        const isSelected = !outside && day === selectedDay;
+        days += `<button class="calendar-day ${outside ? "outside" : ""} ${isToday ? "today" : ""} ${isSelected ? "selected" : ""}" data-day="${day}" data-month="${cellMonth}" data-year="${cellYear}" aria-label="${new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "long", year: "numeric" }).format(new Date(cellYear, cellMonth, day))}">${day}</button>`;
+      }
+      return `<div class="calendar-grid" role="grid">${["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"].map(day => `<span class="weekday" role="columnheader">${day}</span>`).join("")}${days}</div>`;
+    }
+
+    function homePage() {
+      const openCount = assignments.filter(item => !completed.has(item.title)).length;
+      const greetingName = account.firstName.trim() ? `, ${escapeHTML(account.firstName.trim())}` : "";
+      return `${header(`Buongiorno${greetingName}!`, "“Ogni giorno è un nuovo inizio.”", true)}
+        <button class="planning-promo" type="button" data-open-planning>
+          <span class="planning-promo-copy"><span class="planning-promo-icon" aria-hidden="true">✦</span><span><span class="planning-promo-title">Planning con AI</span><span class="planning-promo-text">Organizza lo studio e chiedi una mano all'assistente.</span></span></span>
+          <span class="planning-promo-action">Prova ora <span class="planning-promo-arrow" aria-hidden="true">→</span></span>
+        </button>
+        <div class="stats">
+          <article class="card stat blue-card"><div class="stat-top"><span class="stat-icon">▤</span><span class="stat-arrow">→</span></div><strong class="stat-value">${openCount}</strong><p class="stat-label">Compiti da svolgere</p></article>
+          <article class="card stat red-card"><div class="stat-top"><span class="stat-icon">♟</span><span class="stat-arrow">→</span></div><strong class="stat-value">${reminders.length}</strong><p class="stat-label">Promemoria</p></article>
+        </div>
+        <div class="dashboard-grid">
+          <section class="card panel">${sectionHeading("Compiti", "▤", "Compiti")}${groupedByDay(filtered(assignments).slice(0, 4), "dayOffset", assignmentCard, taskProgress) || empty("Nessun compito trovato.")}</section>
+          <section class="card panel">${sectionHeading("Promemoria", "♟", "Promemoria")}<div class="reminder-list">${groupedByDay(filtered(reminders), "dateOffset", reminderCard) || empty("Nessun promemoria trovato.")}</div></section>
+          <section class="card panel calendar-panel"><div class="panel-heading"><h2 class="panel-title"><span class="panel-icon">▦</span>Calendario</h2>${calendarControls()}</div>${calendarMarkup()}<p class="calendar-selected-date">${new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), selectedDay))}</p></section>
+        </div>
+        <p class="disclaimer">Compiti e promemoria dimostrativi · calendario con date reali del dispositivo.</p>`;
+    }
+
+    function tasksPage() {
+      const tasks = filtered(assignments);
+      return `${header("I tuoi compiti", "Consulta le consegne e segna quelli che hai completato.")}
+        <section class="card panel page-enter">${sectionHeading("Tutti i compiti", "▤", "Home", "Home")}
+        ${tasks.length ? groupedByDay(tasks, "dayOffset", item => {
+          const isDone = completed.has(item.title);
+          return `<article class="task-row ${isDone ? "is-done" : ""}">
+            <button class="check-button" data-complete="${item.title}" aria-label="${isDone ? "Segna da fare" : "Segna come completato"}" aria-pressed="${isDone}">${isDone ? "✓" : "○"}</button>
+            <span class="subject-dot" style="background:${item.color}"></span>
+            <div class="assignment-body"><span class="subject">${item.subject}</span><h3 class="assignment-title">${item.title}</h3><p class="assignment-detail">${item.detail}</p></div>
+          </article>`;
+        }, taskProgress) : empty("Nessun compito trovato.")}</section>
+        <p class="disclaimer">Dati dimostrativi · non collegati ad Argo didUP</p>`;
+    }
+
+    function remindersPage() {
+      const items = filtered(reminders);
+      return `${header("Promemoria", "Verifiche, materiali da ricordare e prossime scadenze.")}
+        <section class="card panel page-enter">${sectionHeading("In programma", "♟", "Home", "Home")}
+        ${items.length ? groupedByDay(items, "dateOffset", reminderCard) : empty("Nessun promemoria trovato.")}</section>
+        <p class="disclaimer">Dati dimostrativi · non collegati ad Argo didUP</p>`;
+    }
+
+    function calendarPage() {
+      const selected = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), selectedDay);
+      return `${header("Calendario", "Date reali, aggiornate automaticamente dal calendario del dispositivo.")}
+        <section class="card panel page-enter"><div class="calendar-page-heading"><h2 class="panel-title"><span class="panel-icon">▦</span>Calendario</h2>${calendarControls()}</div>${calendarMarkup()}<p class="calendar-selected-date">${new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(selected)}</p></section>`;
+    }
+
+    function accountPage(status = "") {
+      const schoolYear = escapeHTML(account.schoolYear);
+      return `${header("Il tuo account", "Inserisci i tuoi dati per personalizzare il diario.")}
+        <section class="card account-card page-enter">
+          <div class="account-intro"><span class="account-avatar" id="account-preview-avatar">${accountInitials()}</span><div><h2 id="account-preview-name">${escapeHTML([account.firstName, account.lastName].filter(Boolean).join(" ").trim() || "Crea il tuo profilo")}</h2><p id="account-preview-school">${escapeHTML(account.school || "Aggiungi la scuola e l'anno scolastico.")}</p></div></div>
+          <form class="account-form" id="account-form">
+            <div class="field"><label for="first-name">Nome</label><input id="first-name" name="firstName" autocomplete="given-name" maxlength="60" required value="${escapeHTML(account.firstName)}" placeholder="Es. Luca"></div>
+            <div class="field"><label for="last-name">Cognome</label><input id="last-name" name="lastName" autocomplete="family-name" maxlength="60" required value="${escapeHTML(account.lastName)}" placeholder="Es. Rossi"></div>
+            <div class="field full"><label for="school">Scuola</label><input id="school" name="school" autocomplete="organization" maxlength="120" required value="${escapeHTML(account.school)}" placeholder="Nome della scuola"></div>
+            <div class="field full"><label for="school-year">Anno scolastico frequentato</label><input id="school-year" name="schoolYear" maxlength="60" required value="${schoolYear}" placeholder="Es. 3ª superiore"></div>
+            <div class="account-footer field full"><p class="save-status ${status ? "success" : ""}" id="save-status" role="status">${status}</p><button class="save-button" type="submit">Salva account</button></div>
+          </form>
+          <p class="account-note">I dati vengono salvati solo in questo browser e servono a personalizzare la schermata. Non vengono inviati ad Argo.</p>
+        </section>`;
+    }
+
+    function planningPage() {
+      const connected = geminiApiConfigured;
+      const savedTasks = assignments.filter(item => !completed.has(item.title));
+      const upcomingReminders = reminders.filter(item => item.dateOffset >= 0);
+      return `${header("Planning con AI", "Costruiamo un piano di studio su misura per te.")}
+        <div class="planning-page page-enter">
+          <section class="planning-hero"><span class="ai-eyebrow">✦ Il tuo assistente di studio</span><h2>Più organizzazione, meno stress.</h2><p>La chiave Gemini viene configurata una sola volta nelle variabili segrete del server online. Poi puoi usare Planning e Chat senza reinserirla.</p></section>
+          <div class="planning-layout">
+            <section class="card planning-card">
+              <h2>Connessione Google Gemini</h2>
+              <p class="planning-key-status ${connected ? "connected" : ""}" role="status">${geminiConfigLoaded ? (connected ? "Gemini è configurato e pronto all'uso." : geminiConfigError || "Configura GEMINI_API_KEY nelle variabili segrete dell'hosting.") : "Verifica della configurazione in corso…"}</p>
+              <p class="account-note">La chiave resta sul server e non viene inviata al browser. L'uso dell'API può essere soggetto a limiti o costi Google.</p>
+            </section>
+            <section class="card planning-card">
+              <h2>Il tuo piano</h2>
+              <p>L'assistente incrocia i compiti ancora da fare con verifiche e altre scadenze dei promemoria, distribuendo il lavoro nei giorni disponibili.</p>
+              <div class="planning-task-list">${savedTasks.length ? savedTasks.map(item => `<div class="planning-task">${escapeHTML(item.subject)}: ${escapeHTML(item.title)} · ${escapeHTML(item.due)}</div>`).join("") : `<p class="empty">Hai completato tutti i compiti di esempio.</p>`}</div>
+              <h3 class="planning-list-heading">Promemoria considerati</h3>
+              <div class="planning-task-list">${upcomingReminders.length ? upcomingReminders.map(item => {
+                const { relativeDay, dateText } = dateGroupLabel(item.dateOffset);
+                return `<div class="planning-task">${escapeHTML(item.title)} · ${escapeHTML(relativeDay ? `${relativeDay}, ${dateText}` : dateText)} alle ${escapeHTML(item.time)}</div>`;
+              }).join("") : `<p class="empty">Non ci sono promemoria futuri.</p>`}</div>
+              <div class="planning-actions"><button class="ai-button" type="button" data-generate-plan ${connected && !planningBusy ? "" : "disabled"}>${planningBusy ? "Sto preparando il piano…" : "✦ Crea il mio piano"}</button><button class="ai-secondary-button" type="button" data-go="Chat">Apri Chat</button></div>
+              <p class="ai-status ${planningStatus.startsWith("Errore") ? "error" : "success"}" id="planning-status" role="status">${escapeHTML(planningStatus)}</p>
+              <div class="planning-result" id="planning-result" aria-live="polite">${escapeHTML(planningResult)}</div>
+            </section>
+          </div>
+        </div>`;
+    }
+
+    function chatMessage(message) {
+      const isUser = message.role === "user";
+      return `<article class="chat-message ${isUser ? "user" : "assistant"}">
+        <span class="message-avatar" aria-hidden="true">${isUser ? escapeHTML(accountInitials()) : "✦"}</span>
+        <div class="message-bubble">${escapeHTML(message.text)}</div>
+      </article>`;
+    }
+
+    function chatPage() {
+      const setup = !geminiConfigLoaded || !geminiApiConfigured
+        ? `<section class="card chat-setup"><div class="planning-hero"><span class="ai-eyebrow">✦ Chat con Gemini</span><h2>${geminiConfigLoaded ? (geminiConfigError ? "Server non raggiungibile" : "Gemini non configurato") : "Connessione in corso…"}</h2><p>${geminiConfigLoaded ? (geminiConfigError || "Aggiungi GEMINI_API_KEY nelle variabili segrete dell'hosting.") : "Sto verificando la configurazione del server."}</p>${geminiConfigLoaded && !geminiConfigError ? `<button class="ai-button" type="button" data-go="Planning" style="margin-top:13px">Vai a Planning</button>` : ""}</div></section>`
+        : "";
+      const messages = chatHistory.length
+        ? chatHistory.map(chatMessage).join("")
+        : `<div class="chat-empty-state"><span class="message-avatar" aria-hidden="true">✦</span><div>Ciao${account.firstName.trim() ? ` ${escapeHTML(account.firstName.trim())}` : ""}! Sono il tuo assistente di studio. Posso aiutarti con i compiti o a organizzare il ripasso.</div></div>`;
+      return `${header("Chat", "Chiedi a Gemini una mano con lo studio.")}
+        ${geminiConfigLoaded && geminiApiConfigured ? `<section class="card chat-shell page-enter">
+          <div class="chat-heading"><span class="chat-heading-icon" aria-hidden="true">✦</span><span><h2>Assistente di studio</h2><p>Google Gemini · disponibile online</p></span><button class="text-button" type="button" data-go="Planning">Planning</button></div>
+          <div class="chat-messages" id="chat-messages" aria-live="polite">${messages}${chatBusy ? chatMessage({ role: "assistant", text: "Sto pensando…" }).replace('class="chat-message assistant"', 'class="chat-message assistant loading"') : ""}</div>
+          <div class="chat-composer"><form class="chat-form" id="chat-form"><textarea class="chat-input" id="chat-input" name="message" maxlength="4000" rows="1" placeholder="Scrivi la tua domanda…" aria-label="Messaggio per Gemini" required ${chatBusy ? "disabled" : ""}></textarea><button class="ai-button" type="submit" ${chatBusy ? "disabled" : ""}>${chatBusy ? "Invio…" : "Invia ↑"}</button></form><p class="chat-status ai-status ${chatStatus.startsWith("Errore") ? "error" : ""}" id="chat-status" role="status">${escapeHTML(chatStatus)}</p><p class="chat-footnote">La conversazione resta in memoria in questa scheda. Evita di inviare dati personali o sensibili.</p></div>
+        </section>` : setup}`;
+    }
+
+    async function generateStudyPlan() {
+      if (!geminiApiConfigured || planningBusy) return;
+      planningBusy = true;
+      planningStatus = "Sto preparando un piano realistico…";
+      render();
+      const planningData = {
+        today: new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(today),
+        schoolYear: account.schoolYear || "non indicato",
+        tasks: assignments
+          .filter(item => !completed.has(item.title))
+          .map(item => ({
+            subject: item.subject,
+            title: item.title,
+            details: item.detail,
+            dueDate: dateGroupLabel(item.dayOffset).dateText,
+            daysUntilDue: item.dayOffset
+          })),
+        reminders: reminders
+          .filter(item => item.dateOffset >= 0)
+          .map(item => ({
+            title: item.title,
+            details: item.detail,
+            date: dateGroupLabel(item.dateOffset).dateText,
+            daysUntil: item.dateOffset,
+            time: item.time
+          }))
+      };
+      try {
+        planningResult = await askGemini([{
+          role: "user",
+          parts: [{ text: `Crea il mio piano di studio usando tutti i compiti non completati e tutti i promemoria futuri nei dati seguenti. Oggi è ${planningData.today}. Considera l'anno scolastico solo come contesto per calibrare il linguaggio, non come fonte di compiti.\n\nDATI DEL DIARIO:\n${JSON.stringify(planningData, null, 2)}` }]
+        }], `Sei un tutor scolastico esperto di pianificazione. Analizza davvero ogni compito e promemoria fornito e restituisci in italiano un piano pratico, personalizzato e ordinato per data. I dati del diario sono l'unica fonte attendibile: non aggiungere impegni e non ignorare elementi. L'anno scolastico, se presente, serve soltanto a calibrare il livello delle spiegazioni.
+
+Prima di pianificare:
+- tratta verifiche, interrogazioni, test ed esami come prove da preparare nei giorni precedenti, non come normali promemoria;
+- valuta difficoltà e impegno di ogni compito e prova (facile, medio o impegnativo), motivando brevemente la stima in base alla materia, alla quantità e ai dettagli disponibili; segnalala sempre come stima, non come dato certo;
+- individua i carichi quantificabili: conta esercizi elencati (per esempio n. 1, 2, 3 = 3 esercizi), ricava il numero di pagine solo da pagine o intervalli esplicitamente indicati e conta gli intervalli di paragrafi solo se inequivocabili.
+
+Poi pianifica da oggi fino all'ultima scadenza, con una sezione per ciascun giorno in cui è utile studiare:
+- evidenzia data, prove imminenti e scadenze, indicando anche l'ora dei promemoria quando presente;
+- assegna ogni compito a una giornata prima della sua scadenza, specificando materia, attività e numero di esercizi quando ricavabile;
+- distribuisci la preparazione di ciascuna verifica su più sessioni brevi nei giorni disponibili; per ogni sessione indica pagine, esercizi o argomenti e quantità solo quando supportati dai dati, con un obiettivo diverso e progressivo (comprensione, ripasso, richiamo attivo);
+- stima la durata di ogni sessione e il carico giornaliero in modo realistico, alterna attività impegnative e leggere e inserisci pause; non presumere quante ore libere abbia lo studente e non sovraccaricare la vigilia;
+- chiudi ogni giornata con una breve lista di controllo e termina con le informazioni che mancano per rendere il piano più preciso.
+
+Non inventare pagine, programma della verifica, quantità di esercizi, difficoltà come se fossero certe o tempo libero dello studente. Se una prova non riporta pagine o argomenti, scrivi che servono programma e intervallo di pagine; nel frattempo proponi soltanto un ripasso generale breve e dichiaratamente provvisorio, senza fingere di sapere cosa studiare. Se un compito non è quantificabile, descrivilo senza assegnargli una quantità arbitraria. Se mancano attività, dillo chiaramente.`);
+        planningStatus = "Piano creato.";
+      } catch (error) {
+        planningStatus = `Errore: ${error.message}`;
+      } finally {
+        planningBusy = false;
+        if (currentPage === "Planning") render();
+      }
+    }
+
+    async function sendChatMessage() {
+      if (!geminiApiConfigured || chatBusy) return;
+      const input = document.querySelector("#chat-input");
+      const message = input.value.trim();
+      if (!message) return;
+      chatHistory.push({ role: "user", text: message });
+      chatStatus = "";
+      chatBusy = true;
+      render();
+      const conversation = chatHistory.map(item => ({
+        role: item.role,
+        parts: [{ text: item.text }]
+      }));
+      try {
+        const answer = await askGemini(conversation, "Sei un assistente scolastico amichevole. Rispondi in italiano, in modo chiaro e adatto a uno studente. Aiuta con compiti e organizzazione senza inventare dati del registro.");
+        chatHistory.push({ role: "model", text: answer });
+      } catch (error) {
+        chatHistory.pop();
+        chatStatus = `Errore: ${error.message}`;
+      } finally {
+        chatBusy = false;
+        if (currentPage === "Chat") render();
+      }
+    }
+
+    async function askGemini(contents, systemInstruction) {
+      if (!geminiApiConfigured) throw new Error("Gemini non è configurato sul server.");
+      const response = await fetch("/api/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+        body: JSON.stringify({
+          model: API_CONFIG.google.models["gemini-2.5-chat"],
+          systemInstruction,
+          contents
+        })
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) await refreshAppConfig();
+        const message = result?.error || `La richiesta a Gemini non è riuscita (HTTP ${response.status}).`;
+        throw new Error(message);
+      }
+      const text = typeof result?.text === "string" ? result.text.trim() : "";
+      if (!text) throw new Error("Gemini ha restituito una risposta vuota. Riprova.");
+      return text;
+    }
+
+    async function refreshAppConfig() {
+      const authGate = document.querySelector("#auth-gate");
+      const appElement = document.querySelector(".app");
+      const form = document.querySelector("#auth-form");
+      const authStatus = document.querySelector("#auth-status");
+      try {
+        const response = await fetch("/api/config", { cache: "no-store" });
+        const config = await response.json();
+        if (!response.ok) throw new Error(config?.error || `Errore HTTP ${response.status}.`);
+        csrfToken = config.csrfToken || "";
+        geminiApiConfigured = config.configured === true;
+        geminiConfigError = "";
+        if (config.setupRequired) {
+          appElement.hidden = true;
+          authGate.hidden = false;
+          document.querySelector("#auth-title").textContent = "Configurazione necessaria";
+          document.querySelector("#auth-copy").textContent = "Prima della pubblicazione, imposta SESSION_SECRET, APP_PASSWORD e GEMINI_API_KEY nelle variabili segrete dell'hosting.";
+          form.hidden = true;
+          authStatus.textContent = "";
+          return;
+        }
+        if (!config.authenticated) {
+          appElement.hidden = true;
+          authGate.hidden = false;
+          document.querySelector("#auth-title").textContent = "Diario scolastico";
+          document.querySelector("#auth-copy").textContent = "Accedi per aprire il diario e usare l'assistente AI.";
+          form.hidden = false;
+          authStatus.textContent = "";
+          document.querySelector("#app-password").focus();
+          return;
+        }
+        authGate.hidden = true;
+        appElement.hidden = false;
+        geminiConfigLoaded = true;
+        render();
+      } catch (error) {
+        appElement.hidden = true;
+        authGate.hidden = false;
+        document.querySelector("#auth-title").textContent = "Sito non raggiungibile";
+        document.querySelector("#auth-copy").textContent = "Controlla la connessione e riprova. Per l'accesso da telefono e PC, il progetto deve essere pubblicato su un hosting HTTPS.";
+        form.hidden = true;
+        authStatus.textContent = error.message;
+        console.error("Non è stato possibile verificare la configurazione dell'app.", error);
+      } finally {
+        geminiConfigLoaded = true;
+      }
+    }
+
+    async function login() {
+      const form = document.querySelector("#auth-form");
+      const passwordInput = document.querySelector("#app-password");
+      const submitButton = form.querySelector("button[type='submit']");
+      const status = document.querySelector("#auth-status");
+      submitButton.disabled = true;
+      status.textContent = "";
+      try {
+        const response = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+          body: JSON.stringify({ password: passwordInput.value })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result?.error || `Accesso non riuscito (HTTP ${response.status}).`);
+        passwordInput.value = "";
+        await refreshAppConfig();
+      } catch (error) {
+        status.textContent = error.message;
+        passwordInput.focus();
+      } finally {
+        submitButton.disabled = false;
+      }
+    }
+
+    async function logout() {
+      try {
+        const response = await fetch("/api/logout", {
+          method: "POST",
+          headers: { "X-CSRF-Token": csrfToken }
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result?.error || `Uscita non riuscita (HTTP ${response.status}).`);
+        csrfToken = "";
+        await refreshAppConfig();
+      } catch (error) {
+        chatStatus = `Errore: ${error.message}`;
+        console.error("Non è stato possibile chiudere la sessione.", error);
+      }
+    }
+
+    function placeholderPage(name) {
+      return `${header(name, "Sezione disponibile nell'anteprima del diario scolastico.")}<section class="card panel page-enter">${sectionHeading(name, "▤", "Home", "Torna alla Home")}<p class="empty">Questa anteprima contiene soltanto compiti, promemoria e calendario.</p></section>`;
+    }
+
+    function render() {
+      renderNavigation();
+      document.querySelector(".app").classList.toggle("ai-mode", aiMode);
+      content.innerHTML = currentPage === "Compiti" ? tasksPage()
+        : currentPage === "Promemoria" ? remindersPage()
+        : currentPage === "Calendario" ? calendarPage()
+        : currentPage === "Account" ? accountPage()
+        : currentPage === "Planning" ? planningPage()
+        : currentPage === "Chat" ? chatPage()
+        : currentPage === "Home" ? homePage()
+        : placeholderPage(currentPage);
+      updateProfile();
+      if (currentPage === "Chat" && geminiApiConfigured) {
+        const messageList = document.querySelector("#chat-messages");
+        if (messageList) messageList.scrollTop = messageList.scrollHeight;
+      }
+    }
+
+    function openPage(page) {
+      currentPage = page;
+      if (["Planning", "Chat"].includes(page)) aiMode = true;
+      else if (page !== "Home" && aiMode) aiMode = false;
+      else if (page === "Home") aiMode = false;
+      chatStatus = "";
+      render();
+    }
+
+    navigation.addEventListener("click", event => {
+      const button = event.target.closest("[data-page]");
+      if (!button) return;
+      openPage(button.dataset.page);
+    });
+    document.querySelector(".topbar").addEventListener("click", event => {
+      const pageButton = event.target.closest("[data-page]");
+      if (pageButton) {
+        openPage(pageButton.dataset.page);
+        return;
+      }
+      if (event.target.closest("[data-exit-planning]")) openPage("Home");
+      if (event.target.closest("[data-logout]")) void logout();
+    });
+    content.addEventListener("click", event => {
+      if (event.target.closest("[data-open-planning]")) {
+        aiMode = true;
+        openPage("Planning");
+        return;
+      }
+      if (event.target.closest("[data-generate-plan]")) {
+        void generateStudyPlan();
+        return;
+      }
+      const completeButton = event.target.closest("[data-complete]");
+      if (completeButton) {
+        const title = completeButton.dataset.complete;
+        if (completed.has(title)) completed.delete(title);
+        else completed.add(title);
+        try {
+          localStorage.setItem("diario-completed", JSON.stringify([...completed]));
+        } catch (error) {
+          console.warn("Non è stato possibile salvare i compiti nel browser.", error);
+        }
+        render();
+        return;
+      }
+      const goButton = event.target.closest("[data-go]");
+      if (goButton) {
+        openPage(goButton.dataset.go);
+        return;
+      }
+      const monthButton = event.target.closest("[data-month-shift]");
+      if (monthButton) {
+        calendarMonth.setMonth(calendarMonth.getMonth() + Number(monthButton.dataset.monthShift));
+        selectedDay = Math.min(selectedDay, new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0).getDate());
+        render();
+        return;
+      }
+      const dayButton = event.target.closest("[data-day]");
+      if (dayButton) {
+        selectedDay = Number(dayButton.dataset.day);
+        calendarMonth = new Date(Number(dayButton.dataset.year), Number(dayButton.dataset.month), 1);
+        render();
+      }
+      const statCard = event.target.closest("[data-stat-page]");
+      if (statCard) {
+        currentPage = statCard.dataset.statPage;
+        render();
+      }
+    });
+    content.addEventListener("submit", event => {
+      if (event.target.id === "chat-form") {
+        event.preventDefault();
+        void sendChatMessage();
+        return;
+      }
+      if (event.target.id !== "account-form") return;
+      event.preventDefault();
+      const formData = new FormData(event.target);
+      account = {
+        firstName: String(formData.get("firstName") || "").trim(),
+        lastName: String(formData.get("lastName") || "").trim(),
+        school: String(formData.get("school") || "").trim(),
+        schoolYear: String(formData.get("schoolYear") || "").trim()
+      };
+      try {
+        localStorage.setItem("diario-account", JSON.stringify(account));
+        render();
+        const status = document.querySelector("#save-status");
+        status.textContent = "Account salvato. Home e profilo sono stati aggiornati.";
+        status.classList.add("success");
+      } catch (error) {
+        console.error("Non è stato possibile salvare l'account nel browser.", error);
+        render();
+        const status = document.querySelector("#save-status");
+        status.textContent = "Salvataggio non riuscito. Verifica le impostazioni del browser.";
+        status.classList.add("error");
+      }
+    });
+    content.addEventListener("input", event => {
+      if (event.target.id !== "account-form") return;
+      const form = event.target.form;
+      document.querySelector("#account-preview-avatar").textContent =
+        (form.elements.firstName.value.trim().charAt(0) + form.elements.lastName.value.trim().charAt(0) || "S").toLocaleUpperCase("it");
+      document.querySelector("#account-preview-name").textContent =
+        [form.elements.firstName.value.trim(), form.elements.lastName.value.trim()].filter(Boolean).join(" ") || "Crea il tuo profilo";
+      document.querySelector("#account-preview-school").textContent =
+        [form.elements.school.value.trim(), form.elements.schoolYear.value.trim()].filter(Boolean).join(" · ") || "Aggiungi la scuola e l'anno scolastico.";
+    });
+    content.addEventListener("keydown", event => {
+      if (event.target.id === "chat-input" && event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        event.target.form.requestSubmit();
+      }
+    });
+    search.addEventListener("input", render);
+    document.querySelector("#auth-form").addEventListener("submit", event => {
+      event.preventDefault();
+      void login();
+    });
+    void refreshAppConfig();
+    if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+      navigator.serviceWorker.register("/sw.js").catch(error => {
+        console.error("Non è stato possibile attivare la modalità installabile.", error);
+      });
+    }
+  </script>
+</body>
+</html>
